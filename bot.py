@@ -1,34 +1,30 @@
 import discord
 from discord.ext import commands, tasks
 import random
-import openai
-import asyncio
-import requests
-import datetime
 import json
 import os
 from dotenv import load_dotenv
+import asyncio
+import datetime
 
 # Загружаем переменные окружения из .env
 load_dotenv()
-TOKEN = os.getenv("TOKEN")  
+TOKEN = os.getenv("BOT_TOKEN")  # Получаем токен бота
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Устанавливаем префикс команд и активируем расширенные намерения
+# Создаём объект бота с префиксом команд "!"
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Файл памяти бота
 MEMORY_FILE = "bot_memory.json"
 
-# Если файла нет, создаём его
-if not os.path.exists(MEMORY_FILE):
-    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
-        json.dump({}, f, ensure_ascii=False, indent=4)
-
 # Загружаем память
-with open(MEMORY_FILE, "r", encoding="utf-8") as f:
-    memory = json.load(f)
+if os.path.exists(MEMORY_FILE):
+    with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+        memory = json.load(f)
+else:
+    memory = {}
 
 # Функция сохранения памяти
 def save_memory():
@@ -77,15 +73,19 @@ async def on_message(message):
     if "привет" in message.content.lower():
         await message.channel.send(f'Привет, {message.author.name}! Как твои дела? 🎮')
     
-    await bot.process_commands(message)  # Обрабатываем команды
+    await bot.process_commands(message)
 
 # Команда для установки любимой игры
 @bot.command()
 async def favgame(ctx, *, game: str):
-    await remember_user(ctx.author)
-    memory[str(ctx.author.id)]["favorite_games"].append(game)
-    save_memory()
-    await ctx.send(f'🔥 {ctx.author.name}, я запомнил, что тебе нравится {game}!')
+    try:
+        await remember_user(ctx.author)
+        memory[str(ctx.author.id)]["favorite_games"].append(game)
+        save_memory()
+        await ctx.send(f'🔥 {ctx.author.name}, я запомнил, что тебе нравится {game}!')
+    except Exception as e:
+        await ctx.send("Произошла ошибка при сохранении вашей любимой игры.")
+        print(f"Error in favgame: {e}")
 
 # Проверка активности игр у пользователей
 @tasks.loop(minutes=10)
