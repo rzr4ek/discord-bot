@@ -4,52 +4,31 @@ import random
 import openai
 import asyncio
 import requests
-from collections import Counter
 import datetime
 import json
 import os
 from dotenv import load_dotenv
-from discord.ext import commands
 
-Загружаем переменные окружения из .env
+# Загружаем переменные окружения из .env
 load_dotenv()
-TOKEN = os.getenv("BOT_TOKEN")  # Получаем токен бота
-
-# Загружаем переменные из .env
-load_dotenv()
-
-# Получаем токены
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("TOKEN")  
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-Создаём объект бота с префиксом команд "!"
-intents = discord.Intents.default()
-intents.messages = True
-intents.guilds = True
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-Простая команда !hello
-@bot.command()
-async def hello(ctx):
-    await ctx.send("Привет! Я твой игровой бот ")
-
-Запускаем бота
-bot.run(TOKEN)
 
 # Устанавливаем префикс команд и активируем расширенные намерения
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-
 # Файл памяти бота
 MEMORY_FILE = "bot_memory.json"
 
+# Если файла нет, создаём его
+if not os.path.exists(MEMORY_FILE):
+    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
+        json.dump({}, f, ensure_ascii=False, indent=4)
+
 # Загружаем память
-if os.path.exists(MEMORY_FILE):
-    with open(MEMORY_FILE, "r", encoding="utf-8") as f:
-        memory = json.load(f)
-else:
-    memory = {}
+with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+    memory = json.load(f)
 
 # Функция сохранения памяти
 def save_memory():
@@ -98,7 +77,7 @@ async def on_message(message):
     if "привет" in message.content.lower():
         await message.channel.send(f'Привет, {message.author.name}! Как твои дела? 🎮')
     
-    await bot.process_commands(message)
+    await bot.process_commands(message)  # Обрабатываем команды
 
 # Команда для установки любимой игры
 @bot.command()
@@ -149,4 +128,4 @@ async def on_ready():
     bot.loop.create_task(check_runtime())
     check_game_activity.start()
 
-bot.run('YOUR_BOT_TOKEN')
+bot.run(TOKEN)
